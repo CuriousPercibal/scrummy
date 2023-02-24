@@ -1,0 +1,1092 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ]
+        }
+      },
+      "id": "684897f8-0386-4097-a6bc-68db0ff4ec60",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        300
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "id",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "name": "snippet",
+              "value": "={{ $json.snippet }}"
+            },
+            {
+              "name": "from",
+              "value": "={{ $json.From }}"
+            },
+            {
+              "name": "subject",
+              "value": "=RE: {{ $json.Subject }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ec679060-cdac-4501-af94-51baaf423ea6",
+      "name": "Set",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        220,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.from }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "=<div>\n        <p style=\"margin-bottom: 2em;\">Please select the one that describe your request the most:</p>\n        <div style=\"background-color: rgba(166, 245, 238, 0.4); width: 25%; padding: 1em 2em; margin-bottom: 2em; border-radius: 16px\">\n            <p>{{ $json.task1.join(',') }}</p>\n            <a href=\"http://localhost:5678/webhook/submit?id={{ $json.uuid1 }}\" style=\"background-color: #397ad4; color: white; border: none; padding: 0.5em 0.7em; border-radius: 8px;\">This one please</a>\n        </div>\n        <div style=\"background-color: rgba(166, 245, 209, 0.4); width: 25%; padding: 1em 2em; border-radius: 16px\">\n            <p>{{ $json.task2.join(',') }}</p>\n            <a  href=\"http://localhost:5678/webhook/submit?id={{ $json.uuid1 }}\"  style=\"background-color: #397ad4; color: white;border: none; padding: 0.5em 0.7em; border-radius: 8px;\">This one please</a>\n        </div>\n    </div>",
+        "options": {}
+      },
+      "id": "47ed0d47-91eb-42c2-ae52-02a80706bc97",
+      "name": "Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        360
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "prompt": "=Extract tasks and separate them with semicolon:  {{ $json.snippet }}",
+        "options": {
+          "maxTokens": 64,
+          "temperature": 0.3
+        }
+      },
+      "id": "39aedc8d-24e6-4306-8b2b-3e515baad543",
+      "name": "OpenAI",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        460,
+        380
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.From }}",
+              "operation": "notEqual",
+              "value2": "={{ $json.To }}"
+            }
+          ]
+        }
+      },
+      "id": "31357b9b-33be-46ab-8e8b-ac1a5c279a55",
+      "name": "IF",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        20,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp = $input.first().json\nconst from = resp.from.match(/[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*/)[0]\nreturn Object.assign(resp, {from})"
+      },
+      "id": "8b20d3a1-7d3a-4475-8396-82b0c7c772eb",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        460,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "addSuffix"
+            }
+          }
+        }
+      },
+      "id": "3285a329-abd6-48f8-a8f1-39d4e0542daf",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        680,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Extract tasks and separate them with semicolon:  {{ $json.snippet }}",
+        "options": {
+          "maxTokens": 64,
+          "temperature": 1
+        }
+      },
+      "id": "f13de0f9-2faf-4fae-bf6f-3d32514459e3",
+      "name": "OpenAI1",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        460,
+        560
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "overrideEmpty": true
+            }
+          }
+        }
+      },
+      "id": "2e64c5d4-da84-4293-a87b-948609ccf3d2",
+      "name": "Merge1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "listId": "63f66f639e3aa700442c5492",
+        "name": "={{ $json.subject }}",
+        "description": "={{ $json.task }}",
+        "additionalFields": {}
+      },
+      "id": "931bcea3-42b6-477e-a787-0eb122c3ed79",
+      "name": "Trello",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        620,
+        1060
+      ],
+      "credentials": {
+        "trelloApi": {
+          "id": "3",
+          "name": "Trello account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const json = $input.first().json\nconst text1 = json.text_1\nconst text2 = json.text_2\nconst from = json.from\nconst subject = json.subject\n\nconst task1 = text1.split(';')\nconst task2 = text2.split(';')\n\nreturn {task1, task2, from, subject}"
+      },
+      "id": "57a1a9ee-8ebf-46a1-a333-f42691b5bd93",
+      "name": "Split tasks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "path": "submit",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "21663c8d-9749-4a13-b0c9-859c1fe76a54",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        1140
+      ],
+      "webhookId": "7818aef2-0584-4bb9-9687-76099447aa69"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ $json.query.id }}",
+        "keyType": "string",
+        "options": {
+          "dotNotation": false
+        }
+      },
+      "id": "6fb0d8f2-1452-46c3-8634-2179e7f830f5",
+      "name": "Redis",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        40,
+        1140
+      ],
+      "credentials": {
+        "redis": {
+          "id": "4",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.uuidtools.com/api/generate/v4/count/2",
+        "options": {}
+      },
+      "id": "d1c3ebd0-182b-4326-9f36-15e49bf857eb",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "d3521821-3410-4f19-93b4-a40dc16e8366",
+      "name": "Merge2",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field\n// called 'myNewField' to the JSON of each one\nconst [uuid1, uuid2] = $input.all().map(i => i.json)\n\nreturn {uuid1, uuid2}"
+      },
+      "id": "da929320-397c-4a2b-ace4-376766ea95c8",
+      "name": "Code1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ $json.uuid1 + 'KEY' }}",
+        "value": "={{ JSON.stringify({ task: $json.task1.join('\\n\\n'), subject: $json.subject.replace('RE: ','') })  }}",
+        "keyType": "string"
+      },
+      "id": "c7fa0a25-bd85-457d-8359-0b11ffcc31fd",
+      "name": "Set option 1",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        520
+      ],
+      "credentials": {
+        "redis": {
+          "id": "4",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ $json.uuid2 }}",
+        "value": "={{ JSON.stringify({ task: $json.task2.join('\\n\\n'), subject: $json.subject.replace('RE: ','') }) }}",
+        "keyType": "string"
+      },
+      "id": "ed96a271-2b00-43f4-a232-397d6d46fa71",
+      "name": "Set option ",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        680
+      ],
+      "credentials": {
+        "redis": {
+          "id": "4",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.propertyName }}",
+              "operation": "notEqual",
+              "value2": "={{ null }}"
+            }
+          ]
+        }
+      },
+      "id": "33e63341-07c0-4e21-86ae-a640ee60ac78",
+      "name": "IF1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        220,
+        1140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return JSON.parse($input.first().json.propertyName)"
+      },
+      "id": "16bc69dc-0678-4114-beea-369e15f1d403",
+      "name": "Code2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        440,
+        1060
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      },
+      "id": "bfa88eb5-5f44-4285-bde9-71eeac47f2e4",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        1680
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "list",
+        "operation": "getCards",
+        "id": "63f66f639e3aa700442c5492",
+        "returnAll": true,
+        "additionalFields": {}
+      },
+      "id": "6f6cef84-6cfb-4e73-88f7-aca063da7ed4",
+      "name": "Trello1",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        40,
+        1680
+      ],
+      "credentials": {
+        "trelloApi": {
+          "id": "3",
+          "name": "Trello account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field\n// called 'myNewField' to the JSON of each one\nreturn $input.all().map(i => i.json).map(i => i.id).slice(0,-3)"
+      },
+      "id": "377cc871-5eaa-4e68-994c-76f4f786c088",
+      "name": "Code3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        220,
+        1680
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "id": {
+          "__rl": true,
+          "value": "={{ $json }}",
+          "mode": "id"
+        }
+      },
+      "id": "d779cc91-1283-42e2-87b4-969e26a62310",
+      "name": "Trello2",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        440,
+        1680
+      ],
+      "credentials": {
+        "trelloApi": {
+          "id": "3",
+          "name": "Trello account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ $json.uuid2 }}",
+        "value": "={{ [$json.uuid2, $json.uuid1]}}",
+        "keyType": "string"
+      },
+      "id": "8fd119f5-4984-4c32-91e4-52fd5b48038d",
+      "name": "Set option 2",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        820
+      ],
+      "credentials": {
+        "redis": {
+          "id": "4",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ $json.uuid1+'KEY' }}",
+        "value": "={{ [$json.uuid2, $json.uuid1]}}",
+        "keyType": "string"
+      },
+      "id": "1f98998b-1572-4d68-aefd-764ea027ac81",
+      "name": "Set option 3",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        960
+      ],
+      "credentials": {
+        "redis": {
+          "id": "4",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "ids",
+        "key": "={{ $json.query.id + 'KEY' }}",
+        "keyType": "string",
+        "options": {
+          "dotNotation": false
+        }
+      },
+      "id": "6efb6b72-1698-48b9-a097-89d3cb123dca",
+      "name": "Redis1",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        40,
+        1400
+      ],
+      "credentials": {
+        "redis": {
+          "id": "4",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $json }}"
+      },
+      "id": "bc570aff-d4af-4f00-9085-96ae593a0fec",
+      "name": "Redis2",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        1380
+      ],
+      "credentials": {
+        "redis": {
+          "id": "4",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<script>window.close()</script>",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "53d8ba85-7a59-4fbe-a30e-4e0b4752b4cc",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        1220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.ids.split(',') || [];"
+      },
+      "id": "ab1e69e6-edf8-4a3a-b8cb-281d5fe60eaa",
+      "name": "Code4",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        440,
+        1400
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Consume incoming emails from clients and send confirmation emails",
+        "height": 88.68758974358975
+      },
+      "id": "3ca9de1b-7a2e-47e7-9a16-1b70f2b4b138",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Consume the button click from the confirmation email",
+        "height": 88.68758974358975
+      },
+      "id": "51dbf852-1817-4a44-b76c-a9b3c160c8ad",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Remove the first [0:-3] card from the trello board in every 4 hours",
+        "height": 88.68758974358975
+      },
+      "id": "2accfd4d-0cfa-47cf-87f9-56a6347f9476",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -180,
+        1560
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "id": "f679d433-f631-495d-b4a1-a4a79529c6b8",
+      "name": "Respond to Webhook1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        440,
+        1220
+      ]
+    },
+    {
+      "parameters": {
+        "prompt": "=Remove curse words only:  {{ $json.subject }}",
+        "options": {
+          "maxTokens": 64,
+          "temperature": 1
+        }
+      },
+      "id": "10422934-4c42-4fe8-ac2e-3ac0f84beb5b",
+      "name": "OpenAI2",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        460,
+        740
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field\n// called 'myNewField' to the JSON of each one\nconst subject = $input.first().json.text;\nreturn {subject}"
+      },
+      "id": "744065c7-215a-4b28-bff7-5f89b7357310",
+      "name": "Code5",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        680,
+        740
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "multiplex",
+        "options": {}
+      },
+      "id": "12d62fe6-7522-4857-8f02-6db79c67d63b",
+      "name": "Merge3",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        880,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "output": "input2"
+      },
+      "id": "078ce4b7-291c-4509-9fc2-1cd1b9e0899c",
+      "name": "Merge4",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        820,
+        1380
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenAI1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenAI2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF": {
+      "main": [
+        [
+          {
+            "node": "Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Split tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split tasks": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Set option 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set option ",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set option 2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set option 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Redis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "IF1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF1": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Trello",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Trello1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trello1": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Trello2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis1": {
+      "main": [
+        [
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trello": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "Merge4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "OpenAI2": {
+      "main": [
+        [
+          {
+            "node": "Code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code5": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge4": {
+      "main": [
+        [
+          {
+            "node": "Redis2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "5c8ce5f3-0a00-400e-b9b0-472f7c228658",
+  "id": "1",
+  "meta": {
+    "instanceId": "974afd2caa8b65515efab70a5c94bbfb284cb28fceb384191a2122297b54fb50"
+  },
+  "tags": []
+}
